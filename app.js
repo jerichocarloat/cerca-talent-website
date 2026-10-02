@@ -46,3 +46,61 @@ if (contactInterest && new URLSearchParams(window.location.search).get('interest
 document.querySelector('#contact-form')?.addEventListener('submit',event=>{event.preventDefault();const form=event.currentTarget;if(!form.reportValidity())return;const data=new FormData(form);const subject='Cerca Talent inquiry: '+data.get('interest');const body='Name: '+(data.get('firstName')+' '+data.get('lastName'))+'\nEmail: '+data.get('email')+'\nCompany: '+data.get('company')+'\nPhone: '+(data.get('countryCode')||'')+' '+data.get('phone')+'\nInterest: '+data.get('interest')+'\nSMS consent: '+(data.get('smsConsent')?'Yes':'No')+'\nPermission to store information and contact by phone/email: Yes\n\n'+data.get('message');const status=document.querySelector('#form-status');status.hidden=false;status.textContent='Your inquiry is ready. Your email app will open so you can review and send it to Info@CercaTalent.com. If it does not open, email us directly or call +1 201-594-2100.';window.location.href='mailto:Info@CercaTalent.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);});
 
 document.querySelector('#newsletter-form')?.addEventListener('submit',event=>{event.preventDefault();const form=event.currentTarget;if(!form.reportValidity())return;const address=new FormData(form).get('email');const status=document.querySelector('#newsletter-status');status.hidden=false;status.textContent='Your email app will open with your subscription request. Review and send it to Cerca Talent.';window.location.href='mailto:Info@CercaTalent.com?subject='+encodeURIComponent('Mailing list subscription request')+'&body='+encodeURIComponent('Please add '+address+' to the Cerca Talent mailing list. I agree to receive your marketing material.');});
+
+// Motion is progressive enhancement: the page stays fully visible if JavaScript
+// is unavailable, and people who prefer reduced motion receive no entrance effects.
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function setupPageMotion() {
+  if (prefersReducedMotion.matches || !('IntersectionObserver' in window)) return;
+
+  const enterTargets = [
+    ...document.querySelectorAll('.hero .eyebrow, .hero h1, .hero-description, .hero-actions, .hero-proof, .inner-hero .breadcrumb, .inner-hero .eyebrow, .inner-hero h1, .inner-hero > p')
+  ];
+
+  enterTargets.forEach((element, index) => {
+    element.dataset.enter = '';
+    element.style.setProperty('--motion-delay', `${Math.min(index * 55, 220)}ms`);
+  });
+
+  if (enterTargets.length) {
+    document.documentElement.classList.add('motion-ready');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      enterTargets.forEach(element => element.classList.add('is-visible'));
+    }));
+  }
+
+  const revealSelectors = [
+    'main > section:not(.hero):not(.inner-hero)',
+    '.industry-card',
+    '.function-card',
+    '.solution-card',
+    '.article-card',
+    '.guide-card',
+    '.team-card',
+    '.job-card'
+  ];
+  const revealTargets = [...new Set(document.querySelectorAll(revealSelectors.join(',')))];
+
+  if (!revealTargets.length) return;
+  document.documentElement.classList.add('motion-ready');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+
+  revealTargets.forEach((element, index) => {
+    element.dataset.reveal = '';
+    const group = element.parentElement;
+    const siblings = group ? [...group.children].filter(child => revealTargets.includes(child)) : [];
+    const groupIndex = Math.max(0, siblings.indexOf(element));
+    element.style.setProperty('--motion-delay', `${Math.min(groupIndex * 50, 200)}ms`);
+    observer.observe(element);
+  });
+}
+
+setupPageMotion();
